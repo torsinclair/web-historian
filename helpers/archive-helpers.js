@@ -3,7 +3,7 @@ var path = require('path');
 var _ = require('underscore');
 var Promise = require('bluebird');
 
-
+Promise.promisifyAll(fs);
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
  * Consider using the `paths` object below to store frequently used file paths. This way,
@@ -28,38 +28,55 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function(callback) {
-  fs.readFile(paths.list, 'utf8', function(err, content) {
+  fs.readFile(exports.paths.list, 'utf8', function(err, content) {
     if (err) {
-      callback(err);
+      console.log(err);
     } else {
       var list = content.split('\n');
-      callback (list);
+      callback(list);
     }
   });
 };
 
 exports.isUrlInList = function(url, callback) {
-  fs.readFile(exports.paths.list, 'utf8', function(err, content) {
-    if (err) {
-      callback(err);
+  exports.readListOfUrls(function(list){
+    if(list.indexOf(url) !== -1) {      
+      callback(true);
     } else {
-      var list = content.split('\n');
-      callback(list.indexOf(url) >= 0);
+      callback(false);
+    }
+
+  });  
+};
+
+exports.addUrlToList = function(url, callback) {
+  exports.isUrlInList(url, function(isFound) {
+    if(!isFound) {      
+      url += '\n';
+      fs.appendFile(exports.paths.list, url, 'utf8', function(err) {
+        if (err) {
+          console.log(err);
+        } else {        
+          console.log('url: '+ url);
+          callback();
+        }
+      });
+    }
+  });  
+};
+
+exports.isUrlArchived = function(url, callback) {
+  fs.readdir(exports.paths.archivedSites, function(err, files) {
+    if (err) {
+      callback(false);
+    } else {
+      if (files.indexOf(url) !== -1) {
+        callback(true);
+      } else {
+        callback(false);
+      }
     }
   });
-};
-
-exports.addUrlToList = function(url) {
-  if (!isUrlInList(url)) {
-    fs.append(path.list, url, function(err) {
-      if (err) {
-        console.log(err);
-      }
-    });
-  }
-};
-
-exports.isUrlArchived = function() {
 };
 
 exports.downloadUrls = function() {
