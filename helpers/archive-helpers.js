@@ -1,6 +1,8 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var Promise = require('bluebird');
+
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -36,13 +38,13 @@ exports.readListOfUrls = function(callback) {
   });
 };
 
-exports.isUrlInList = function(url) {
-  fs.readFile(paths.list, 'utf8', function(err, content) {
+exports.isUrlInList = function(url, callback) {
+  fs.readFile(exports.paths.list, 'utf8', function(err, content) {
     if (err) {
       callback(err);
     } else {
       var list = content.split('\n');
-      return (list.indexOf(url) >= 0);
+      callback(list.indexOf(url) >= 0);
     }
   });
 };
