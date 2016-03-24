@@ -2,6 +2,7 @@ var path = require('path');
 var archive = require('../helpers/archive-helpers');
 var fs = require('fs'); 
 var httpHelper = require('./http-helpers');
+var htmlFetcher = require('../workers/htmlfetcher');
 var Promise = require('bluebird');
 
 Promise.promisifyAll(fs);
@@ -10,7 +11,7 @@ Promise.promisifyAll(fs);
 
 exports.handleRequest = function (req, res) {
 
-  var staticFileHandler = function (filePath, contentType) {
+  var staticFileHandler = function (filePath, contentType, statusCode) {
     var header = httpHelper.headers;
     header['Content-Type'] = contentType;
     fs.readFile(filePath, 'utf8', function(err, data) {
@@ -20,7 +21,7 @@ exports.handleRequest = function (req, res) {
           res.end();
         }
       } else {
-        res.writeHead(200, header);
+        res.writeHead(statusCode, header);
         res.write(data);
         res.end();
       }   
@@ -31,19 +32,20 @@ exports.handleRequest = function (req, res) {
   if (req.method === 'GET') {
     var filePath = req.url;
 
+    htmlFetcher.htmlFetcher();
+    
     if (filePath === '/') {
       filePath = path.join(__dirname, 'public/index.html');
-      staticFileHandler(filePath, 'text/html');
+      staticFileHandler(filePath, 'text/html', 200);
     } else if (filePath === '/styles.css') {
       filePath = path.join(__dirname, 'public/' + filePath);
-      staticFileHandler(filePath, 'text/css');
-    } else if (filePath.match(/\/www/)){
-      archive.isUrlArchived(filePath.slice(1), function(isFound){
+      staticFileHandler(filePath, 'text/css', 200);
+    } else if (filePath.match(/\/www/)) {
+      archive.isUrlArchived(filePath.slice(1), function(isFound) {
         if (isFound) {
           filePath = path.join(archive.paths.archivedSites, '/' + filePath);
-          staticFileHandler(filePath, 'text/html');
-        }
-        else {
+          staticFileHandler(filePath, 'text/html', 200);
+        } else {
           res.writeHead(404);
           res.end();
         }
@@ -63,9 +65,18 @@ exports.handleRequest = function (req, res) {
 
     req.on('end', function() {
       var url = site.slice(4);
-      archive.addUrlToList(url, function(){
-        res.writeHead(302, header);
-        res.end();
+      console.log('url found ' + url);
+
+      archive.isUrlArchived(url, function(isFound) {
+        if (isFound) {
+          filePath = path.join(archive.paths.archivedSites, '/' + filePath);
+          staticFileHandler(filePath, 'text/html', 200);
+        } else {
+          archive.addUrlToList(url, function() {
+            filePath = path.join(__dirname, 'public/loading.html');
+            staticFileHandler(filePath, 'text/html', 302);
+          });
+        }
       });
     });
   }

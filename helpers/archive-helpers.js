@@ -1,4 +1,5 @@
 var fs = require('fs');
+var http = require('http');
 var path = require('path');
 var _ = require('underscore');
 var Promise = require('bluebird');
@@ -39,8 +40,8 @@ exports.readListOfUrls = function(callback) {
 };
 
 exports.isUrlInList = function(url, callback) {
-  exports.readListOfUrls(function(list){
-    if(list.indexOf(url) !== -1) {      
+  exports.readListOfUrls(function(list) {
+    if (list.indexOf(url) !== -1) {      
       callback(true);
     } else {
       callback(false);
@@ -51,13 +52,12 @@ exports.isUrlInList = function(url, callback) {
 
 exports.addUrlToList = function(url, callback) {
   exports.isUrlInList(url, function(isFound) {
-    if(!isFound) {      
+    if (!isFound) {      
       url += '\n';
       fs.appendFile(exports.paths.list, url, 'utf8', function(err) {
         if (err) {
           console.log(err);
         } else {        
-          console.log('url: '+ url);
           callback();
         }
       });
@@ -79,5 +79,34 @@ exports.isUrlArchived = function(url, callback) {
   });
 };
 
-exports.downloadUrls = function() {
+exports.downloadUrls = function(urlArray) {
+
+  _.each(urlArray, function(url) {
+    exports.isUrlArchived(url, function(isFound) {
+      if (!isFound && url !== '') {
+        var dest = exports.paths.archivedSites + '/' + url;
+        var file = fs.createWriteStream(dest);
+        var request = http.get({hostname: url}, function(response) {
+          response.pipe(file);
+          console.log(file);
+          file.on('finish', function() {
+            file.close();
+          });
+        }).on('error', function(err) {
+          console.log('here' + request);
+          fs.unlink(dest);
+          response.write(404);
+          response.end();
+        });
+      }
+    });
+  });
 };
+
+
+
+
+
+
+
+
