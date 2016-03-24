@@ -1,4 +1,5 @@
 var fs = require('fs');
+var request = require('request');
 var http = require('http');
 var path = require('path');
 var _ = require('underscore');
@@ -56,7 +57,7 @@ exports.addUrlToList = function(url, callback) {
       url += '\n';
       fs.appendFile(exports.paths.list, url, 'utf8', function(err) {
         if (err) {
-          console.log(err);
+          callback(err);
         } else {        
           callback();
         }
@@ -86,22 +87,51 @@ exports.downloadUrls = function(urlArray) {
       if (!isFound && url !== '') {
         var dest = exports.paths.archivedSites + '/' + url;
         var file = fs.createWriteStream(dest);
-        var request = http.get({hostname: url}, function(response) {
-          response.pipe(file);
-          console.log(file);
-          file.on('finish', function() {
-            file.close();
+        url = 'http://' + url;
+
+        http.request({host: url}, function(response){
+          var body = '';
+
+          response.on('data', function(data){
+            body += data;
           });
-        }).on('error', function(err) {
-          console.log('here' + request);
-          fs.unlink(dest);
-          response.write(404);
-          response.end();
+
+          response.on('end', function(){
+            fs.writeFileSync(dest, body, function(err){
+              console.log(err);
+            });
+          }).end();
         });
       }
     });
   });
 };
+
+
+
+
+       // request('http://google.com/doodle.png').pipe(fs.createWriteStream('doodle.png'));
+
+        // console.log(url);
+        // request(url).pipe(file).on('error', function(err) { console.log(err); } );
+        // // // console.log(fs.readdir(exports.paths.archivedSites));
+        // console.log(url);
+        // http.get(url, function(response) {
+        //   console.log('hi');
+        //   response.pipe(file);
+        //   file.on('finish', function() {
+        //     file.close();
+        //   });
+        // }).on('error', function(err) {
+        //   console.log('here');
+        //   fs.unlink(dest);
+        //   response.write(404);
+        //   response.end();
+        // });
+        
+    
+  
+
 
 
 

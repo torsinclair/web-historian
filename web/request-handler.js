@@ -16,6 +16,7 @@ exports.handleRequest = function (req, res) {
     header['Content-Type'] = contentType;
     fs.readFile(filePath, 'utf8', function(err, data) {
       if (err) {
+        console.log(filePath);
         if (err.code === 'ENOENT') {
           res.writeHead(404);
           res.end();
@@ -32,8 +33,8 @@ exports.handleRequest = function (req, res) {
   if (req.method === 'GET') {
     var filePath = req.url;
 
-    htmlFetcher.htmlFetcher();
-    
+    // htmlFetcher.htmlFetcher();
+
     if (filePath === '/') {
       filePath = path.join(__dirname, 'public/index.html');
       staticFileHandler(filePath, 'text/html', 200);
@@ -67,17 +68,21 @@ exports.handleRequest = function (req, res) {
       var url = site.slice(4);
       console.log('url found ' + url);
 
-      archive.isUrlArchived(url, function(isFound) {
-        if (isFound) {
-          filePath = path.join(archive.paths.archivedSites, '/' + filePath);
-          staticFileHandler(filePath, 'text/html', 200);
-        } else {
-          archive.addUrlToList(url, function() {
+      archive.isUrlInList(url, function(isFound) {
+        if (!isFound) {              
+          archive.addUrlToList(url, function(err) {
             filePath = path.join(__dirname, 'public/loading.html');
             staticFileHandler(filePath, 'text/html', 302);
           });
+        } else {
+          archive.isUrlArchived(url, function(isFound) {
+            if (isFound) {
+              filePath = path.join(archive.paths.archivedSites, '/' + url);
+              staticFileHandler(filePath, 'text/html', 302);
+            } 
+          });
         }
-      });
+      });      
     });
   }
 
