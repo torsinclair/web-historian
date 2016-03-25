@@ -88,47 +88,42 @@ exports.downloadUrls = function(urlArray) {
         var dest = exports.paths.archivedSites + '/' + url;
         var file = fs.createWriteStream(dest);
         url = 'http://' + url;
-
-        http.request({host: url}, function(response){
-          var body = '';
-
-          response.on('data', function(data){
-            body += data;
+        // request(url).pipe(file).on('error', function(err) { console.log(err); } );
+        // // console.log(fs.readdir(exports.paths.archivedSites));
+        console.log(url);
+        http.get(url, function(response) {
+          console.log('hi');
+          response.pipe(file);
+          file.on('finish', function() {
+            file.close();
           });
-
-          response.on('end', function(){
-            fs.writeFileSync(dest, body, function(err){
-              console.log(err);
-            });
-          }).end();
+        }).on('error', function(err) {
+          console.log('here');
+          fs.unlink(dest);
+          response.write(404);
+          response.end();
         });
+        
       }
     });
   });
 };
 
 
+        // http.request({host: url}, function(response) {
+        //   var body = '';
 
-
-       // request('http://google.com/doodle.png').pipe(fs.createWriteStream('doodle.png'));
-
-        // console.log(url);
-        // request(url).pipe(file).on('error', function(err) { console.log(err); } );
-        // // // console.log(fs.readdir(exports.paths.archivedSites));
-        // console.log(url);
-        // http.get(url, function(response) {
-        //   console.log('hi');
-        //   response.pipe(file);
-        //   file.on('finish', function() {
-        //     file.close();
+        //   response.on('data', function(data) {
+        //     body += data;
         //   });
-        // }).on('error', function(err) {
-        //   console.log('here');
-        //   fs.unlink(dest);
-        //   response.write(404);
-        //   response.end();
+
+        //   response.on('end', function() {
+        //     fs.writeFileSync(dest, body, function(err) {
+        //       console.log(err);
+        //     });
+        //   }).end();
         // });
-        
+
     
   
 

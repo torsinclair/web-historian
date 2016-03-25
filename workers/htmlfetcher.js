@@ -2,6 +2,7 @@
 // that are waiting.
 var archive = require('../helpers/archive-helpers');
 var Promise = require('bluebird');
+var CronJob = require('cron').CronJob;
 
 // Promise.promisifyAll(archive);
 
@@ -15,4 +16,4 @@ var htmlFetcher = function() {
 
 exports.htmlFetcher = htmlFetcher;
 
-// window.setInterval(htmlFetcher, 3000); 
+new CronJob('10 * * * * *', htmlFetcher, null, true);

@@ -33,7 +33,7 @@ exports.handleRequest = function (req, res) {
   if (req.method === 'GET') {
     var filePath = req.url;
 
-    // htmlFetcher.htmlFetcher();
+    htmlFetcher.htmlFetcher();
 
     if (filePath === '/') {
       filePath = path.join(__dirname, 'public/index.html');
@@ -66,7 +66,7 @@ exports.handleRequest = function (req, res) {
 
     req.on('end', function() {
       var url = site.slice(4);
-      console.log('url found ' + url);
+      // console.log('url found ' + url);
 
       archive.isUrlInList(url, function(isFound) {
         if (!isFound) {              
